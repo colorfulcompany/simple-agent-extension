@@ -1,0 +1,4 @@
+static:
+  agents:
+    opencode:
+      mode: subagent

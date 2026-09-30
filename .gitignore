@@ -1,0 +1,39 @@
+# Bundler
+/.bundle/
+/vendor/
+Gemfile.lock
+
+# Gem build artifacts
+/pkg/
+*.gem
+
+# Compiled packages
+/build/
+
+# Scratch space (geminabox data, local gem artifacts)
+/tmp/
+
+# YARD
+/.yardoc/
+/_yardoc/
+/doc/
+
+# Test output
+/coverage/
+/spec/reports/
+
+# Editor backups
+*~
+\#*\#
+.\#*
+*.swp
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# LeanSpec
+/.lean-spec/
+/specs/
+/.agents/skills/leanspec/

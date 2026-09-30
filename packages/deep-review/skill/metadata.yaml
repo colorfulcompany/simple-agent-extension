@@ -1,0 +1,6 @@
+---
+name: deep-design-review
+
+static:
+  common:
+    description: Review a proposed or completed change for design quality, alternatives, system fit, and safe change strategy. Use when a normal code review is insufficient or when explicitly requested.

@@ -1,0 +1,4 @@
+adaptive:
+  permissions:
+    read: allow
+    edit: ask

@@ -1,0 +1,9 @@
+---
+name: deep-design-reviewer
+
+static:
+  common:
+    description: Performs read-only deep design reviews of proposed or completed changes, assessing system fit, contracts, alternatives, reversibility, scope, unnecessary cost, and testability.
+  agents:
+    opencode:
+      mode: subagent

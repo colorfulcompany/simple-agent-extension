@@ -1,0 +1,5 @@
+name: named-skill
+
+static:
+  common:
+    description: A named skill with common metadata.

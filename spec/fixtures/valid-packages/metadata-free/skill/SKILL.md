@@ -1,0 +1,3 @@
+# Metadata-free skill
+
+body
