@@ -38,6 +38,16 @@ module SimpleAgentExtension
       self.class::NAME
     end
 
+    # @return [String, nil] one-line summary of the Agent product
+    def description
+      self.class::DESCRIPTION if self.class.const_defined?(:DESCRIPTION)
+    end
+
+    # @return [String, nil] official site of the Agent product
+    def homepage
+      self.class::HOMEPAGE if self.class.const_defined?(:HOMEPAGE)
+    end
+
     # @param [String, Symbol] type
     # @param [String, Symbol] field
     # @return [Boolean] whether this Agent has a translation rule for the field

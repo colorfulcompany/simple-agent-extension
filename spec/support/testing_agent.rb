@@ -32,4 +32,17 @@ module SimpleAgentExtension
   class TestingAgentWithoutSharedSkills < TestingAgent
     def skill_shared? = false
   end
+
+  # Declares both product facts a subclass may optionally carry. There is no
+  # counterpart declaring only one of them; nothing depends on that case yet.
+  class TestingFullDescribedAgent < TestingAgent
+    NAME = "described".freeze
+    DESCRIPTION = "An example coding agent".freeze
+    HOMEPAGE = "https://example.test".freeze
+  end
+
+  # Declares neither, and inherits both from its superclass.
+  class TestingAgentInheritingDescription < TestingFullDescribedAgent
+    NAME = "inheriting".freeze
+  end
 end

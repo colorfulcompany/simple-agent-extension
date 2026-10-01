@@ -2,6 +2,8 @@ module SimpleAgentExtension
   module Agents
     class OpenCode < AgentBase
       NAME = "opencode".freeze
+      DESCRIPTION = "OpenCode, an open source terminal coding agent".freeze
+      HOMEPAGE = "https://opencode.ai".freeze
 
       class MetadataTranslator < ::SimpleAgentExtension::AgentProperty::MetadataTranslator
         define_translation type: :skill, field: "permissions" do |permissions|
