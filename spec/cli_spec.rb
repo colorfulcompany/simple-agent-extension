@@ -114,13 +114,15 @@ describe "simple-agent-extension" do
         "--agent-dir", agent_directory,
         "--agent", "external"
       )
+      reported = File.join(config_dir, "agents").sub(/\A#{Regexp.escape(Dir.home)}\//, "~/")
 
       assert {
         status.success? &&
           stderr.empty? &&
           File.exist?(File.join(build_root, "external", "own", "translated-permissions", "agent")) &&
           File.exist?(destination) &&
-          stdout.include?(destination)
+          stdout.include?("external\n") &&
+          stdout.include?("  translated-permissions/agent -> #{reported}\n")
       }
     end
   end

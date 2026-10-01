@@ -139,7 +139,7 @@ module SimpleAgentExtension
     end
 
     def print_deployments(deployments)
-      deployments.each { |source, destination| @output.puts "#{source} -> #{destination}" }
+      @output.puts DeploymentReport.new(deployments).lines
     end
   end
 end

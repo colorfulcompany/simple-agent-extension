@@ -108,6 +108,43 @@ module SimpleAgentExtension
       end
     end
 
+    describe "#deploy" do
+      before do
+        @workspace = Fixture.valid_workspace
+        @home = File.join(@workspace.root, "home")
+        @copilot = Agents::Copilot.new(
+          config_dir: File.join(@home, "copilot"),
+          shared_skill_dir: File.join(@home, "copilot-shared/skills")
+        )
+        @opencode = Agents::OpenCode.new(
+          config_dir: File.join(@home, "opencode"),
+          shared_skill_dir: File.join(@home, "opencode-shared/skills")
+        )
+        FileUtils.mkdir_p(@copilot.config_dir)
+        FileUtils.mkdir_p(@opencode.config_dir)
+        @runner = runner(@workspace, agent_registry: AgentRegistry.new([@copilot, @opencode]))
+        @runner.build
+      end
+
+      def destinations(deployed, agent_name)
+        deployed.fetch(agent_name).map { |_source, destination| destination }
+      end
+
+      it "keys the result by Agent name in registry order" do
+        assert { @runner.deploy.keys == ["copilot", "opencode"] }
+      end
+
+      it "reports only that Agent's destinations under its key" do
+        deployed = @runner.deploy
+
+        assert {
+          destinations(deployed, "opencode").all? { |path|
+            path.start_with?(@opencode.config_dir) || path.start_with?(@opencode.shared_skill_dir)
+          }
+        }
+      end
+    end
+
     describe "#install" do
       before do
         @workspace = Fixture.valid_workspace
@@ -140,11 +177,10 @@ module SimpleAgentExtension
       end
 
       it "builds and deploys only Copilot artifacts when Copilot is selected" do
-        compiled, deployed = @runner.install(agent: "copilot")
+        compiled, = @runner.install(agent: "copilot")
 
         assert {
           compiled.all? { |dir| dir.include?("/copilot/") } &&
-            deployed.all? { |_source, destination| destination.include?("/copilot/") || destination.include?("/copilot-shared/") } &&
             File.exist?(File.join(@home, "copilot-shared/skills/metadata-free/SKILL.md")) &&
             File.exist?(File.join(@home, "copilot/agents/metadata-free.agent.md")) &&
             !File.exist?(File.join(@home, "opencode/agents/metadata-free.md")) &&
@@ -154,14 +190,11 @@ module SimpleAgentExtension
 
       it "skips an uninstalled Agent while building artifacts for all targets" do
         FileUtils.rm_rf(@opencode.config_dir)
-        _stdout, stderr = capture_io { @compiled, @deployed = @runner.install }
+        _stdout, stderr = capture_io { @compiled, _deployed = @runner.install }
 
         assert {
           @compiled.any? { |dir| dir.include?("/copilot/") } &&
             @compiled.any? { |dir| dir.include?("/opencode/") } &&
-            @deployed.none? { |_source, destination|
-              destination.start_with?(@opencode.config_dir) || destination.start_with?(@opencode.shared_skill_dir)
-            } &&
             File.exist?(File.join(@home, "copilot/agents/metadata-free.agent.md")) &&
             !File.exist?(@opencode.config_dir) &&
             !File.exist?(@opencode.shared_skill_dir) &&
@@ -171,12 +204,10 @@ module SimpleAgentExtension
 
       it "passes force through install to deploy an uninstalled Agent" do
         FileUtils.rm_rf(@opencode.config_dir)
-        _stdout, stderr = capture_io { _compiled, @deployed = @runner.install(force: true) }
+        _stdout, stderr = capture_io { @runner.install(force: true) }
 
         assert {
-          stderr.empty? &&
-            @deployed.any? { |_source, destination| destination.start_with?(@opencode.config_dir) } &&
-            File.exist?(File.join(@home, "opencode/agents/metadata-free.md"))
+          stderr.empty? && File.exist?(File.join(@home, "opencode/agents/metadata-free.md"))
         }
       end
     end
