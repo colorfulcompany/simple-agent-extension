@@ -6,7 +6,12 @@ require "simple_agent_extension"
 module SimpleAgentExtension
   # Command-line adapter for public package compilation and deployment.
   class CLI
-    COMMANDS = %w[packages build deploy].freeze
+    COMMANDS = {
+      "packages" => "List package names under the source root",
+      "build" => "Compile artifacts into the build root",
+      "deploy" => "Build artifacts, then deploy them to Agents",
+      "agents" => "List Agent names that can be targeted"
+    }.freeze
 
     def self.run(arguments, output: $stdout, error: $stderr)
       new(output: output, error: error).run(arguments)
@@ -35,6 +40,19 @@ module SimpleAgentExtension
       1
     end
 
+    # Aligns the name column alone. Columns an Agent does not declare are
+    # dropped rather than padded, so no line carries trailing whitespace.
+    #
+    # @param [Array<Hash>] agents name, description, and homepage per Agent
+    # @return [Array<String>]
+    def agent_lines(agents)
+      width = agents.map { |agent| agent[:name].length }.max.to_i
+
+      agents.map do |agent|
+        [agent[:name].ljust(width), agent[:description], agent[:homepage]].compact.join("  ").rstrip
+      end
+    end
+
     private
 
     def default_options
@@ -50,7 +68,7 @@ module SimpleAgentExtension
 
     def option_parser(options)
       OptionParser.new do |parser|
-        parser.banner = "Usage: simple-agent-extension COMMAND [options]"
+        parser.banner = banner
 
         parser.on("--source-root DIRECTORY", "Source package root (default: ./packages)") do |directory|
           options[:source_root] = File.expand_path(directory)
@@ -73,6 +91,13 @@ module SimpleAgentExtension
       end
     end
 
+    def banner
+      width = COMMANDS.keys.map(&:length).max
+      commands = COMMANDS.map { |name, summary| "    #{name.ljust(width)}  #{summary}" }
+
+      ["Usage: simple-agent-extension COMMAND [options]", "", "Commands:", *commands, "", "Options:"].join("\n")
+    end
+
     def display_help(parser)
       @output.puts parser
       0
@@ -81,7 +106,7 @@ module SimpleAgentExtension
     def command(arguments)
       command = arguments.shift
       raise ArgumentError, "missing command" unless command
-      raise ArgumentError, "unknown command: #{command}" unless COMMANDS.include?(command)
+      raise ArgumentError, "unknown command: #{command}" unless COMMANDS.key?(command)
       raise ArgumentError, "unexpected arguments: #{arguments.join(" ")}" unless arguments.empty?
 
       command
@@ -103,6 +128,8 @@ module SimpleAgentExtension
       case command
       when "packages"
         @output.puts runner.packages
+      when "agents"
+        @output.puts agent_lines(runner.agents)
       when "build"
         @output.puts runner.build(agent: options[:agent])
       when "deploy"
