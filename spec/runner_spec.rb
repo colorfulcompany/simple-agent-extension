@@ -92,7 +92,23 @@ module SimpleAgentExtension
         end
 
         it "rejects an unknown selected agent through the registry" do
-          assert_raises(UnknownAgentName) { @runner.build(agent: "missing") }
+          assert_raises(UnknownAgentName) { @runner.build(agents: ["missing"]) }
+        end
+
+        it "builds artifacts for every selected agent" do
+          directories = @runner.build(agents: ["copilot", "opencode"])
+
+          assert {
+            ["copilot", "opencode"].all? { |name|
+              directories.any? { |dir| dir.include?("/build/#{name}/") }
+            }
+          }
+        end
+
+        it "builds one agent's artifacts once when that agent is repeated" do
+          assert {
+            @runner.build(agents: ["copilot", "copilot"]) == @runner.build(agents: ["copilot"])
+          }
         end
       end
 
@@ -177,7 +193,7 @@ module SimpleAgentExtension
       end
 
       it "builds and deploys only Copilot artifacts when Copilot is selected" do
-        compiled, = @runner.install(agent: "copilot")
+        compiled, = @runner.install(agents: ["copilot"])
 
         assert {
           compiled.all? { |dir| dir.include?("/copilot/") } &&

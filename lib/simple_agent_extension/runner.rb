@@ -25,17 +25,17 @@ module SimpleAgentExtension
       end
     end
 
-    # @param [String, nil] agent target name; all targets when omitted
+    # @param [Array<String>] agents target names; all targets when empty
     # @return [Array<String>] directories written to the build tree
-    def build(agent: nil)
-      selected_agents(agent).flat_map { |target|
-        compiler = Compiler.new(agent: target, build_root: @build_root)
+    def build(agents: [])
+      selected_agents(agents).flat_map { |agent|
+        compiler = Compiler.new(agent: agent, build_root: @build_root)
 
         source_extensions.map { |extension| compiler.compile(extension) }
       }
     end
 
-    # @param [String, nil] agent target name; all targets when omitted
+    # @param [Array<String>] agents target names; all targets when empty
     # @param [Boolean] force deploy to an Agent whose config directory is absent
     # Results stay grouped by Agent so callers never have to read an Agent
     # name back out of a path. A skipped Agent and an Agent with no artifact
@@ -43,17 +43,17 @@ module SimpleAgentExtension
     #
     # @return [Hash{String => Array<Array(String, String)>}] source and
     #   destination pairs per Agent name
-    def deploy(agent: nil, force: false)
-      selected_agents(agent).to_h { |target|
-        [target.name, Deployer.new(agent: target, build_root: @build_root).deploy(force: force)]
+    def deploy(agents: [], force: false)
+      selected_agents(agents).to_h { |agent|
+        [agent.name, Deployer.new(agent: agent, build_root: @build_root).deploy(force: force)]
       }
     end
 
-    # @param [String, nil] agent target name; all targets when omitted
+    # @param [Array<String>] agents target names; all targets when empty
     # @param [Boolean] force deploy to an Agent whose config directory is absent
     # @return [Array<Array>] compiled directories and deployed pairs per Agent
-    def install(agent: nil, force: false)
-      [build(agent: agent), deploy(agent: agent, force: force)]
+    def install(agents: [], force: false)
+      [build(agents: agents), deploy(agents: agents, force: force)]
     end
 
     private
@@ -62,10 +62,14 @@ module SimpleAgentExtension
       Collector.source(root: @source_root).extensions
     end
 
-    def selected_agents(name)
-      return @agent_registry.all if name.to_s.empty?
+    # @param [Array<String>] agents requested names; all targets when empty
+    # @return [Array<AgentBase>]
+    # @raise [UnknownAgentName] when a requested name is not configured
+    def selected_agents(agents)
+      names = Array(agents).reject { |name| name.to_s.empty? }.map(&:to_s).uniq
+      return @agent_registry.all if names.empty?
 
-      [@agent_registry.fetch(name)]
+      names.map { |name| @agent_registry.fetch(name) }
     end
   end
 end

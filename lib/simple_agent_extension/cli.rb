@@ -59,7 +59,7 @@ module SimpleAgentExtension
       {
         source_root: File.expand_path("packages"),
         build_root: File.expand_path("build"),
-        agent: nil,
+        agents: [],
         agent_directories: [],
         force: false,
         help: false
@@ -76,8 +76,8 @@ module SimpleAgentExtension
         parser.on("--build-root DIRECTORY", "Build artifact root (default: ./build)") do |directory|
           options[:build_root] = File.expand_path(directory)
         end
-        parser.on("--agent NAME", "Build or deploy only NAME") do |name|
-          options[:agent] = name
+        parser.on("--agent NAME", "Build or deploy only NAME (repeatable)") do |name|
+          options[:agents] << name
         end
         parser.on("--agent-dir DIRECTORY", "Load direct *.rb Agent registrations from DIRECTORY") do |directory|
           options[:agent_directories] << directory
@@ -131,10 +131,10 @@ module SimpleAgentExtension
       when "agents"
         @output.puts agent_lines(runner.agents)
       when "build"
-        @output.puts runner.build(agent: options[:agent])
+        @output.puts runner.build(agents: options[:agents])
       when "deploy"
-        @output.puts runner.build(agent: options[:agent])
-        print_deployments(runner.deploy(agent: options[:agent], force: options[:force]))
+        @output.puts runner.build(agents: options[:agents])
+        print_deployments(runner.deploy(agents: options[:agents], force: options[:force]))
       end
     end
 
