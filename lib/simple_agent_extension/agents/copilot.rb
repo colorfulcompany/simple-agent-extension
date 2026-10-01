@@ -2,6 +2,8 @@ module SimpleAgentExtension
   module Agents
     class Copilot < AgentBase
       NAME = "copilot".freeze
+      DESCRIPTION = "GitHub Copilot CLI".freeze
+      HOMEPAGE = "https://github.com/features/copilot/cli".freeze
 
       class MetadataTranslator < ::SimpleAgentExtension::AgentProperty::MetadataTranslator
         define_translation type: :skill, field: "permissions" do |permissions|

@@ -4,6 +4,8 @@ require "spec_helper"
 require "fileutils"
 require "open3"
 require "rbconfig"
+require "stringio"
+require "simple_agent_extension/cli"
 require "fixture"
 
 CLI_EXECUTABLE = File.expand_path("../exe/simple-agent-extension", __dir__)
@@ -244,6 +246,43 @@ describe "simple-agent-extension" do
       assert {
         !status.success? && stdout.empty? && stderr == "--force is only valid for deploy\n"
       }
+    end
+  end
+end
+
+module SimpleAgentExtension
+  describe CLI do
+    it "shows the command vocabulary in the help output" do
+      output = StringIO.new
+      status = CLI.new(output: output, error: StringIO.new).run(["--help"])
+
+      assert { status == 0 && output.string.include?("Commands:") }
+    end
+
+    describe "#agent_lines" do
+      before do
+        @cli = CLI.new(output: StringIO.new, error: StringIO.new)
+      end
+
+      it "pads the name column to the longest name and joins the declared columns" do
+        lines = @cli.agent_lines([
+          {name: "x", description: "An example agent", homepage: "https://example.test"},
+          {name: "opencode", description: "Another agent", homepage: nil}
+        ])
+
+        assert {
+          lines == [
+            "x         An example agent  https://example.test",
+            "opencode  Another agent"
+          ]
+        }
+      end
+
+      it "leaves the name alone when an Agent declares neither" do
+        lines = @cli.agent_lines([{name: "bare", description: nil, homepage: nil}])
+
+        assert { lines == ["bare"] }
+      end
     end
   end
 end

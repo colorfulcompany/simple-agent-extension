@@ -16,6 +16,15 @@ module SimpleAgentExtension
       source_extensions.map(&:package).uniq
     end
 
+    # @return [Array<Hash>] name, description, and homepage of every Agent
+    #   configured for this run. Description and homepage are nil when the
+    #   Agent does not declare them.
+    def agents
+      @agent_registry.all.map do |agent|
+        {name: agent.name, description: agent.description, homepage: agent.homepage}
+      end
+    end
+
     # @param [String, nil] agent target name; all targets when omitted
     # @return [Array<String>] directories written to the build tree
     def build(agent: nil)

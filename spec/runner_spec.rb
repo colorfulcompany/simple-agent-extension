@@ -1,6 +1,7 @@
 require "spec_helper"
 require "simple_agent_extension"
 require "fixture"
+require "support/testing_agent"
 
 module SimpleAgentExtension
   describe Runner do
@@ -30,6 +31,44 @@ module SimpleAgentExtension
             "metadata-name-and-common-raw",
             "translated-permissions"
           ]
+        }
+      end
+    end
+
+    describe "#agents" do
+      before do
+        @workspace = Fixture.valid_workspace
+      end
+
+      it "reports the name, description, and homepage of every configured Agent" do
+        registry = AgentRegistry.new([TestingFullDescribedAgent.new])
+
+        assert {
+          runner(@workspace, agent_registry: registry).agents == [
+            {
+              name: "described",
+              description: "An example coding agent",
+              homepage: "https://example.test"
+            }
+          ]
+        }
+      end
+
+      it "reports no description or homepage for an Agent that declares neither" do
+        registry = AgentRegistry.new([TestingAgent.new])
+
+        assert {
+          runner(@workspace, agent_registry: registry).agents ==
+            [{name: "testing", description: nil, homepage: nil}]
+        }
+      end
+
+      it "keeps the order of the configured registry" do
+        registry = AgentRegistry.new([TestingFullDescribedAgent.new, TestingAgent.new])
+
+        assert {
+          runner(@workspace, agent_registry: registry).agents.map { |agent| agent[:name] } ==
+            ["described", "testing"]
         }
       end
     end
