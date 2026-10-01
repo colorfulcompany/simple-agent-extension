@@ -37,16 +37,21 @@ module SimpleAgentExtension
 
     # @param [String, nil] agent target name; all targets when omitted
     # @param [Boolean] force deploy to an Agent whose config directory is absent
-    # @return [Array<Array(String, String)>] source and destination pairs
+    # Results stay grouped by Agent so callers never have to read an Agent
+    # name back out of a path. A skipped Agent and an Agent with no artifact
+    # both appear as an empty array.
+    #
+    # @return [Hash{String => Array<Array(String, String)>}] source and
+    #   destination pairs per Agent name
     def deploy(agent: nil, force: false)
-      selected_agents(agent).flat_map { |target|
-        Deployer.new(agent: target, build_root: @build_root).deploy(force: force)
+      selected_agents(agent).to_h { |target|
+        [target.name, Deployer.new(agent: target, build_root: @build_root).deploy(force: force)]
       }
     end
 
     # @param [String, nil] agent target name; all targets when omitted
     # @param [Boolean] force deploy to an Agent whose config directory is absent
-    # @return [Array<Array>] compiled directories and deployed file pairs
+    # @return [Array<Array>] compiled directories and deployed pairs per Agent
     def install(agent: nil, force: false)
       [build(agent: agent), deploy(agent: agent, force: force)]
     end

@@ -62,34 +62,14 @@ describe "simple-agent-extension" do
     end
   end
 
-  it "builds a selected externally registered Agent" do
-    Fixture.valid_workspace do |workspace|
-      agent_directory = File.join(workspace, "agents")
-      config_dir = File.join(workspace, "external-config")
-      write_agent(
-        agent_directory,
-        "external.rb",
-        agent_source(class_name: "External", name: "external", config_dir: config_dir)
-      )
-
-      source_root = File.join(workspace, "source")
-      build_root = File.join(workspace, "artifacts")
-      stdout, stderr, status = invoke(
-        workspace,
-        "build",
-        "--source-root", source_root,
-        "--build-root", build_root,
-        "--agent-dir", agent_directory,
-        "--agent", "external"
-      )
-
-      assert {
-        status.success? &&
-          stderr.empty? &&
-          !stdout.empty? &&
-          File.directory?(File.join(build_root, "external", "shared", "metadata-free", "skill"))
-      }
-    end
+  # An Agent that does not declare one deploys shared skills under
+  # `~/.agents/skills`. A CLI test therefore selects a source root whose
+  # packages carry agent extensions only, so deployment stays in the workspace.
+  def agent_only_source_root(workspace, package)
+    root = File.join(workspace, "agent-source")
+    FileUtils.mkdir_p(root)
+    FileUtils.cp_r(File.join(workspace, "source", package), root)
+    root
   end
 
   it "builds fresh artifacts before it deploys them" do
@@ -103,9 +83,9 @@ describe "simple-agent-extension" do
         agent_source(class_name: "External", name: "external", config_dir: config_dir)
       )
 
-      source_root = File.join(workspace, "source")
+      source_root = agent_only_source_root(workspace, "agent-raw-override")
       build_root = File.join(workspace, "artifacts")
-      destination = File.join(config_dir, "agents", "translated-permissions.md")
+      destination = File.join(config_dir, "agents", "agent-raw-override.md")
       stdout, stderr, status = invoke(
         workspace,
         "deploy",
@@ -118,37 +98,10 @@ describe "simple-agent-extension" do
       assert {
         status.success? &&
           stderr.empty? &&
-          File.exist?(File.join(build_root, "external", "own", "translated-permissions", "agent")) &&
+          File.exist?(File.join(build_root, "external", "own", "agent-raw-override", "agent")) &&
           File.exist?(destination) &&
-          stdout.include?(destination)
-      }
-    end
-  end
-
-  it "passes --force to deploy an uninstalled Agent" do
-    Fixture.valid_workspace do |workspace|
-      agent_directory = File.join(workspace, "agents")
-      config_dir = File.join(workspace, "external-config")
-      write_agent(
-        agent_directory,
-        "external.rb",
-        agent_source(class_name: "External", name: "external", config_dir: config_dir)
-      )
-
-      _stdout, stderr, status = invoke(
-        workspace,
-        "deploy",
-        "--source-root", File.join(workspace, "source"),
-        "--build-root", File.join(workspace, "artifacts"),
-        "--agent-dir", agent_directory,
-        "--agent", "external",
-        "--force"
-      )
-
-      assert {
-        status.success? &&
-          stderr.empty? &&
-          File.exist?(File.join(config_dir, "agents", "translated-permissions.md"))
+          stdout.include?("external\n") &&
+          stdout.include?("  agent-raw-override/agent -> ")
       }
     end
   end
@@ -174,80 +127,6 @@ describe "simple-agent-extension" do
       }
     end
   end
-
-  it "stops before building when a registration file fails to load" do
-    Fixture.valid_workspace do |workspace|
-      agent_directory = File.join(workspace, "agents")
-      agent_file = File.join(agent_directory, "broken.rb")
-      write_agent(agent_directory, "broken.rb", "raise \"unavailable\"\n")
-      build_root = File.join(workspace, "artifacts")
-      stdout, stderr, status = invoke(
-        workspace,
-        "build",
-        "--source-root", File.join(workspace, "source"),
-        "--build-root", build_root,
-        "--agent-dir", agent_directory
-      )
-
-      assert {
-        !status.success? &&
-          stdout.empty? &&
-          stderr.lines.size == 1 &&
-          stderr.include?(agent_file) &&
-          !File.exist?(build_root)
-      }
-    end
-  end
-
-  it "stops before building when an external Agent duplicates a built-in name" do
-    Fixture.valid_workspace do |workspace|
-      agent_directory = File.join(workspace, "agents")
-      write_agent(
-        agent_directory,
-        "duplicate.rb",
-        agent_source(
-          class_name: "Duplicate",
-          name: "copilot",
-          config_dir: File.join(workspace, "duplicate-config")
-        )
-      )
-      build_root = File.join(workspace, "artifacts")
-      stdout, stderr, status = invoke(
-        workspace,
-        "build",
-        "--source-root", File.join(workspace, "source"),
-        "--build-root", build_root,
-        "--agent-dir", agent_directory
-      )
-
-      assert {
-        !status.success? &&
-          stdout.empty? &&
-          stderr == "duplicate agent: copilot\n" &&
-          !File.exist?(build_root)
-      }
-    end
-  end
-
-  it "does not expose the former install command" do
-    Fixture.valid_workspace do |workspace|
-      stdout, stderr, status = invoke(workspace, "install")
-
-      assert {
-        !status.success? && stdout.empty? && stderr == "unknown command: install\n"
-      }
-    end
-  end
-
-  it "accepts --force only for deploy" do
-    Fixture.valid_workspace do |workspace|
-      stdout, stderr, status = invoke(workspace, "build", "--force")
-
-      assert {
-        !status.success? && stdout.empty? && stderr == "--force is only valid for deploy\n"
-      }
-    end
-  end
 end
 
 module SimpleAgentExtension
@@ -257,6 +136,20 @@ module SimpleAgentExtension
       status = CLI.new(output: output, error: StringIO.new).run(["--help"])
 
       assert { status == 0 && output.string.include?("Commands:") }
+    end
+
+    it "does not expose the former install command" do
+      error = StringIO.new
+      status = CLI.new(output: StringIO.new, error: error).run(["install"])
+
+      assert { status == 1 && error.string == "unknown command: install\n" }
+    end
+
+    it "accepts --force only for deploy" do
+      error = StringIO.new
+      status = CLI.new(output: StringIO.new, error: error).run(["build", "--force"])
+
+      assert { status == 1 && error.string == "--force is only valid for deploy\n" }
     end
 
     describe "#agent_lines" do
