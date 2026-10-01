@@ -121,10 +121,15 @@ A skill whose metadata is left unchanged by adaptation and carries no Agent-spec
 
 ### Commands
 
+`-h` / `--help` lists every command with a one-line summary.
+
+snapshot as below:
+
 ```sh
 simple-agent-extension packages
 simple-agent-extension build
 simple-agent-extension deploy
+simple-agent-extension agents
 ```
 
 All commands resolve `--source-root` from `./packages` and `--build-root` from `./build` by default. Either root may be outside the repository.
@@ -159,16 +164,6 @@ Agent registrations are executable Ruby and are not sandboxed. Do not load untru
 bundle exec rake spec
 bundle exec standardrb
 ```
-
-The checkout-bound package workflow is retained separately:
-
-```sh
-bundle exec rake -f Rakefile.repository packages
-bundle exec rake -f Rakefile.repository build[opencode]
-bundle exec rake -f Rakefile.repository deploy[opencode]
-```
-
-The repository `deploy` task depends on `build`; it likewise has no `install` task.
 
 ### Local gem source
 
