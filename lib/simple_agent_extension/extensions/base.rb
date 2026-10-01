@@ -54,6 +54,20 @@ module SimpleAgentExtension
       def metadata_loader
         @metadata_loader ||= MetadataLoader.load(dir)
       end
+
+      # @return [Array<String>, nil] Agent names this extension is distributed
+      #   to; nil when it names none and therefore reaches every Agent
+      def deploy_to
+        metadata_loader.deploy_to
+      end
+
+      # @param [String] agent_name
+      # @return [Boolean]
+      def deployable_to?(agent_name)
+        names = deploy_to
+
+        names.nil? || names.include?(agent_name)
+      end
     end
   end
 end

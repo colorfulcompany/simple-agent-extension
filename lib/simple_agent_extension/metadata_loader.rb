@@ -25,6 +25,19 @@ module SimpleAgentExtension
     end
     attr_reader :metadata
 
+    # Names the Agents this extension is distributed to. It is a selection
+    # constraint, not metadata carried into an artifact, so it stays outside
+    # the adaptive and static sections.
+    #
+    # @return [Array<String>, nil] nil when the extension names no target,
+    #   which means every configured Agent
+    def deploy_to
+      value = metadata["deploy_to"]
+      return nil if value.nil?
+
+      Array(value).map(&:to_s)
+    end
+
     # @return [Metadata] adaptive source fragments
     def adaptive
       section("adaptive")

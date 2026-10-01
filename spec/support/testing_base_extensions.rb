@@ -39,6 +39,18 @@ module SimpleAgentExtension
       end
     end
 
+    class WithDeployTo < Extensions::Base
+      def metadata_loader
+        MetadataLoader.new(Metadata.from("deploy_to" => ["copilot", "opencode"]))
+      end
+    end
+
+    class WithoutDeployTo < Extensions::Base
+      def metadata_loader
+        MetadataLoader.new(Metadata.new)
+      end
+    end
+
     class NoMetadataNoFrontmatter < Extensions::Base
       def metadata
         Metadata.new

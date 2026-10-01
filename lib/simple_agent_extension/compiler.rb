@@ -52,12 +52,18 @@ module SimpleAgentExtension
         type: extension.type,
         overlaid_adaptive: dto.overlaid_adaptive
       )
-      artifact_scope = classify_artifact_scope(
-        type: extension.type,
-        overlaid_adaptive: dto.overlaid_adaptive,
-        adapted: adapted_fragments,
-        agent_static: dto.agent_static
-      )
+      # A named distribution target rules out the shared destination before
+      # the content has any say: that destination is read by every Agent.
+      artifact_scope = if extension.deploy_to
+        :own
+      else
+        classify_artifact_scope(
+          type: extension.type,
+          overlaid_adaptive: dto.overlaid_adaptive,
+          adapted: adapted_fragments,
+          agent_static: dto.agent_static
+        )
+      end
       artifact_metadata = @metadata_composer.overlay_agent_specific(
         common: dto.common_static,
         adapted: adapted_fragments,

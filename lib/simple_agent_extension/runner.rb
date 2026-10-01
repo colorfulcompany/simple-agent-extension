@@ -28,10 +28,15 @@ module SimpleAgentExtension
     # @param [Array<String>] agents target names; all targets when empty
     # @return [Array<String>] directories written to the build tree
     def build(agents: [])
-      selected_agents(agents).flat_map { |agent|
+      targets = selected_agents(agents)
+      extensions = source_extensions
+      warn_unknown_deploy_to_names(extensions)
+
+      targets.flat_map { |agent|
         compiler = Compiler.new(agent: agent, build_root: @build_root)
 
-        source_extensions.map { |extension| compiler.compile(extension) }
+        extensions.select { |extension| extension.deployable_to?(agent.name) }
+          .map { |extension| compiler.compile(extension) }
       }
     end
 
@@ -60,6 +65,21 @@ module SimpleAgentExtension
 
     def source_extensions
       Collector.source(root: @source_root).extensions
+    end
+
+    # `deploy_to` names a destination, not a guarantee, so a name no Agent
+    # answers to is reported and then treated as matching nothing. Strict
+    # rejection waits until source metadata is validated up front.
+    #
+    # Names are checked against every configured Agent, not the run's
+    # selection, so narrowing a run does not turn a valid name into a warning.
+    #
+    # @param [Array<Extensions::Base>] extensions
+    def warn_unknown_deploy_to_names(extensions)
+      extensions.each do |extension|
+        Array(extension.deploy_to).reject { |name| @agent_registry.include?(name) }
+          .each { |name| warn "unknown agent name in deploy_to: #{name} (#{extension.package}/#{extension.type})" }
+      end
     end
 
     # @param [Array<String>] agents requested names; all targets when empty

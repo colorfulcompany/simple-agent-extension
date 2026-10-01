@@ -112,6 +112,22 @@ module SimpleAgentExtension
         end
       end
 
+      describe "with the deploy_to package fixture" do
+        before do
+          @workspace = Fixture.deploy_to_workspace
+          @runner = runner(@workspace, agent_registry: AgentRegistry.new([TestingAgent.new]))
+        end
+
+        it "reports an unconfigured deploy_to name and builds nothing for it" do
+          _stdout, stderr = capture_io { @directories = @runner.build }
+
+          assert {
+            stderr == "unknown agent name in deploy_to: nonexistent (unknown-target/skill)\n" &&
+              @directories.none? { |dir| dir.include?("/unknown-target/") }
+          }
+        end
+      end
+
       describe "with the invalid package fixture" do
         before do
           @workspace = Fixture.invalid_workspace

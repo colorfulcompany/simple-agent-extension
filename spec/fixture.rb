@@ -62,6 +62,23 @@ module Fixture
     raise
   end
 
+  # @yield [String] workspace containing `source/` and `build/`
+  def deploy_to_workspace
+    if block_given?
+      workspace do |dir|
+        copy("deploy-to-packages", to: source_root(dir))
+        yield dir
+      end
+    else
+      context = workspace
+      copy("deploy-to-packages", to: context.source_root)
+      context
+    end
+  rescue
+    context&.close
+    raise
+  end
+
   # @yield [String] workspace containing the selected `build/` tree
   def build_workspace(name)
     if block_given?

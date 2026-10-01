@@ -39,6 +39,40 @@ module SimpleAgentExtension
       end
     end
 
+    describe "#deploy_to" do
+      it "returns the Agent names the extension declares" do
+        extension = TestingBase::WithDeployTo.new(package: "deep-review", dir: ".", files: [])
+
+        assert { extension.deploy_to == ["copilot", "opencode"] }
+      end
+
+      it "returns nil when the extension declares none" do
+        extension = TestingBase::WithoutDeployTo.new(package: "deep-review", dir: ".", files: [])
+
+        assert { extension.deploy_to.nil? }
+      end
+    end
+
+    describe "#deployable_to?" do
+      it "accepts an Agent the extension names" do
+        extension = TestingBase::WithDeployTo.new(package: "deep-review", dir: ".", files: [])
+
+        assert { extension.deployable_to?("copilot") }
+      end
+
+      it "rejects an Agent the extension does not name" do
+        extension = TestingBase::WithDeployTo.new(package: "deep-review", dir: ".", files: [])
+
+        assert { !extension.deployable_to?("claude") }
+      end
+
+      it "accepts every Agent when the extension names none" do
+        extension = TestingBase::WithoutDeployTo.new(package: "deep-review", dir: ".", files: [])
+
+        assert { extension.deployable_to?("claude") }
+      end
+    end
+
     describe "#entrypoint_path" do
       it "joins the extension directory and entrypoint" do
         extension = TestingBase::Skill.new(
