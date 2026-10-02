@@ -1,3 +1,8 @@
+## [0.2.1] 2026-00-02
+
+- feat: support Claude Code
+- docs: add ADR
+
 ## [0.2.0] 2026-10-01
 
 - feat: `agents` subcommand
