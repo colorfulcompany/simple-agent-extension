@@ -1,4 +1,4 @@
-## [0.2.1] 2026-00-02
+## [0.2.1] 2026-10-02
 
 - feat: support Claude Code
 - docs: add ADR
