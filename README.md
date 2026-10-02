@@ -65,6 +65,9 @@ packages/
 ```yaml
 name: awesome-worker
 
+deploy_to:
+  - opencode
+
 adaptive:
   permissions:
     read: allow
@@ -81,11 +84,19 @@ static:
 | Key | Meaning |
 |---|---|
 | `name` | Extension identity: the name the artifact is deployed under. |
+| `deploy_to` | Agent names this extension is distributed to. Omitting the key distributes to every configured Agent. |
 | `adaptive` | Source fragments whose artifact representation the selected Agent decides. An Agent that has a rule for the field rewrites it; a field with no rule passes through unchanged. |
 | `static.common` | Written to every Agent's artifact without adaptation. |
 | `static.agents.<agent>` | Written only to that Agent's artifact, without adaptation. |
 
 `adaptive` does not mean dynamic. The value is fixed in the file; the key declares that the artifact representation belongs to the Agent rather than to the author.
+
+#### Distribution targets
+
+`deploy_to` limits which Agents an extension reaches.
+
+- No build artifact is produced for an Agent the extension does not name.
+- An extension carrying `deploy_to` is never written to the shared directory. That directory is read by every Agent, so sharing would undo the limit.
 
 #### Name resolution
 
@@ -140,6 +151,14 @@ simple-agent-extension deploy \
   --build-root /work/extensions/build \
   --agent opencode
 ```
+
+`--agent NAME` is repeatable, matching the list shape of `deploy_to`. Without it, every configured Agent is targeted. Unlike `deploy_to`, a name no configured Agent answers to stops the command.
+
+```sh
+simple-agent-extension build --agent copilot --agent opencode
+```
+
+`--agent` narrows which Agents a run operates on. It does not declare distribution, so it does not change an artifact's scope.
 
 `--force` is valid only with `deploy`. It creates deployment directories for an Agent whose configuration root is not already present.
 

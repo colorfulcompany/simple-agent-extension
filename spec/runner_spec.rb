@@ -92,7 +92,39 @@ module SimpleAgentExtension
         end
 
         it "rejects an unknown selected agent through the registry" do
-          assert_raises(UnknownAgentName) { @runner.build(agent: "missing") }
+          assert_raises(UnknownAgentName) { @runner.build(agents: ["missing"]) }
+        end
+
+        it "builds artifacts for every selected agent" do
+          directories = @runner.build(agents: ["copilot", "opencode"])
+
+          assert {
+            ["copilot", "opencode"].all? { |name|
+              directories.any? { |dir| dir.include?("/build/#{name}/") }
+            }
+          }
+        end
+
+        it "builds one agent's artifacts once when that agent is repeated" do
+          assert {
+            @runner.build(agents: ["copilot", "copilot"]) == @runner.build(agents: ["copilot"])
+          }
+        end
+      end
+
+      describe "with the deploy_to package fixture" do
+        before do
+          @workspace = Fixture.deploy_to_workspace
+          @runner = runner(@workspace, agent_registry: AgentRegistry.new([TestingAgent.new]))
+        end
+
+        it "reports an unconfigured deploy_to name and builds nothing for it" do
+          _stdout, stderr = capture_io { @directories = @runner.build }
+
+          assert {
+            stderr == "unknown agent name in deploy_to: nonexistent (unknown-target/skill)\n" &&
+              @directories.none? { |dir| dir.include?("/unknown-target/") }
+          }
         end
       end
 
@@ -177,7 +209,7 @@ module SimpleAgentExtension
       end
 
       it "builds and deploys only Copilot artifacts when Copilot is selected" do
-        compiled, = @runner.install(agent: "copilot")
+        compiled, = @runner.install(agents: ["copilot"])
 
         assert {
           compiled.all? { |dir| dir.include?("/copilot/") } &&

@@ -147,6 +147,24 @@ module SimpleAgentExtension
     describe "#compile" do
       before { @agent = TestingAgent.new }
 
+      describe "with the deploy_to package fixture" do
+        before do
+          @workspace = Fixture.deploy_to_workspace
+          @compiler = Compiler.new(agent: @agent, build_root: @workspace.build_root)
+        end
+
+        it "keeps a limited extension out of the shared scope" do
+          extension = Collector.source(root: @workspace.source_root)
+            .extensions(package: "limited-skill", type: "skill").fetch(0)
+
+          assert {
+            @compiler.compile(extension) == File.join(
+              @workspace.build_root, "testing/own/limited-skill/skill"
+            )
+          }
+        end
+      end
+
       describe "with the valid package fixture" do
         before do
           @workspace = Fixture.valid_workspace

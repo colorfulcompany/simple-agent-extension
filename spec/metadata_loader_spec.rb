@@ -57,6 +57,24 @@ module SimpleAgentExtension
       it "returns the selected Agent's static section" do
         assert { @loader.agent_static("copilot") == {"mode" => "subagent"} }
       end
+
+      it "names no distribution target" do
+        assert { @loader.deploy_to.nil? }
+      end
+    end
+
+    describe "with deploy_to" do
+      it "returns the listed Agent names" do
+        loader = MetadataLoader.new(Metadata.from("deploy_to" => ["opencode", "copilot"]))
+
+        assert { loader.deploy_to == ["opencode", "copilot"] }
+      end
+
+      it "keeps deploy_to out of the adaptive and static sections" do
+        loader = MetadataLoader.new(Metadata.from("deploy_to" => ["opencode"]))
+
+        assert { loader.adaptive.empty? && loader.common_static.empty? }
+      end
     end
 
     describe "without sections" do

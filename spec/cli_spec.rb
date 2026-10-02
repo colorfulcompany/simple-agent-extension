@@ -106,6 +106,43 @@ describe "simple-agent-extension" do
     end
   end
 
+  it "builds for every repeated --agent" do
+    Fixture.valid_workspace do |workspace|
+      agent_directory = File.join(workspace, "agents")
+      ["first", "second", "third"].each do |name|
+        write_agent(
+          agent_directory,
+          "#{name}.rb",
+          agent_source(
+            class_name: name.capitalize,
+            name: name,
+            config_dir: File.join(workspace, "#{name}-config")
+          )
+        )
+      end
+
+      source_root = agent_only_source_root(workspace, "agent-raw-override")
+      build_root = File.join(workspace, "artifacts")
+      _stdout, stderr, status = invoke(
+        workspace,
+        "build",
+        "--source-root", source_root,
+        "--build-root", build_root,
+        "--agent-dir", agent_directory,
+        "--agent", "first",
+        "--agent", "second"
+      )
+
+      assert {
+        status.success? &&
+          stderr.empty? &&
+          File.directory?(File.join(build_root, "first")) &&
+          File.directory?(File.join(build_root, "second")) &&
+          !File.exist?(File.join(build_root, "third"))
+      }
+    end
+  end
+
   it "stops before building when an Agent directory is invalid" do
     Fixture.valid_workspace do |workspace|
       missing_directory = File.join(workspace, "missing-agents")
