@@ -125,10 +125,13 @@ One `adaptive` fragment becomes different artifact metadata per Agent. The `perm
 
 | Agent | Artifact metadata |
 |---|---|
+| `claude` | agent: `tools: Read, Edit`; skill: `allowed-tools: Read` |
 | `copilot` | `tools: [read]` |
 | `opencode` | `permission: {read: allow, edit: ask}` |
 
-A skill whose metadata is left unchanged by adaptation and carries no Agent-specific static fragments is written once to the shared skill directory. Otherwise it is written into that Agent's own configuration tree ( written with Ruby ). An agent extension is always Agent-specific.
+`claude` maps known lowercase tool names such as `read` and `webfetch` to Claude Code's names (`Read`, `WebFetch`) and passes any other name through unchanged. `deny` becomes `disallowedTools` on an agent and `disallowed-tools` on a skill. An agent's `tools` lists both `allow` and `ask` tools, because Claude Code's `tools` limits which tools exist rather than pre-approving them.
+
+A skill whose metadata is left unchanged by adaptation and carries no Agent-specific static fragments is written once to the shared skill directory. Otherwise it is written into that Agent's own configuration tree ( written with Ruby ). An agent extension is always Agent-specific. `claude` does not read the shared skill directory, so its skills are always written to `~/.claude/skills`.
 
 ### Commands
 

@@ -6,5 +6,6 @@ end
 
 require_relative "agent_property"
 require_relative "agent_base"
+require_relative "agents/claude_code"
 require_relative "agents/copilot"
 require_relative "agents/opencode"
