@@ -2,6 +2,7 @@
 
 require "spec_helper"
 require "fileutils"
+require "minitest/mock"
 require "fixture"
 require "simple_agent_extension"
 
@@ -90,13 +91,42 @@ module SimpleAgentExtension
           Fixture.workspace do |workspace|
             directory = File.join(workspace, "missing")
 
-            error = assert_raises(InvalidAgentDirectory) do
+            error = assert_raises(AgentDirectoryNotFound) do
               AgentDirectoryLoader.new(directory).load
             end
 
-            assert {
-              error.message == "invalid agent directory: #{directory}"
-            }
+            assert { error.message == directory }
+          end
+        end
+      end
+
+      describe "when the path names a file" do
+        it "rejects it as not a directory" do
+          Fixture.workspace do |workspace|
+            file = write_file(workspace, "agents.rb", "")
+
+            error = assert_raises(AgentDirectoryNotDirectory) do
+              AgentDirectoryLoader.new(file).load
+            end
+
+            assert { error.message == file }
+          end
+        end
+      end
+
+      describe "when the directory cannot be read" do
+        it "rejects it as not readable" do
+          Fixture.workspace do |workspace|
+            directory = File.join(workspace, "agents")
+            FileUtils.mkdir_p(directory)
+
+            error = File.stub(:readable?, false) do
+              assert_raises(AgentDirectoryNotReadable) do
+                AgentDirectoryLoader.new(directory).load
+              end
+            end
+
+            assert { error.message == File.realpath(directory) }
           end
         end
       end

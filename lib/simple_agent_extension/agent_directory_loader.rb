@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module SimpleAgentExtension
-  class InvalidAgentDirectory < Error; end
+  class AgentDirectoryNotFound < Error; end
+  class AgentDirectoryNotDirectory < Error; end
+  class AgentDirectoryNotReadable < Error; end
   class MissingAgentRegistration < Error; end
   class UnloadableAgentRegistration < Error; end
 
@@ -28,12 +30,15 @@ module SimpleAgentExtension
       @directories.map { |directory| canonical_directory(directory) }.uniq
     end
 
+    # The error class names the condition, so the message carries the path
+    # alone.
     def canonical_directory(directory)
       path = File.expand_path(directory)
-      raise InvalidAgentDirectory, "invalid agent directory: #{path}" unless File.directory?(path)
+      raise AgentDirectoryNotFound, path unless File.exist?(path)
+      raise AgentDirectoryNotDirectory, path unless File.directory?(path)
 
       path = File.realpath(path)
-      raise InvalidAgentDirectory, "invalid agent directory: #{path}" unless File.readable?(path)
+      raise AgentDirectoryNotReadable, path unless File.readable?(path)
 
       path
     end
