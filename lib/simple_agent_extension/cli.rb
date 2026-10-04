@@ -6,6 +6,13 @@ require "simple_agent_extension"
 module SimpleAgentExtension
   # Command-line adapter for public package compilation and deployment.
   class CLI
+    # The command line itself was written wrong. The message describes the
+    # mistake in full, so where it was raised tells the caller nothing.
+    class UsageError < Error; end
+
+    # No command was resolved, so the caller still needs the vocabulary.
+    class CommandError < UsageError; end
+
     COMMANDS = {
       "packages" => "List package names under the source root",
       "build" => "Compile artifacts into the build root",
@@ -22,6 +29,12 @@ module SimpleAgentExtension
       @error = error
     end
 
+    # Only errors this CLI defines, and the one OptionParser raises for a
+    # misspelled option, are reduced to a message. Everything else passes
+    # through with its class, origin, and backtrace intact.
+    #
+    # CommandError has to be listed first: it is a UsageError, so the wider
+    # clause would take it otherwise.
     def run(arguments)
       arguments = arguments.dup
       options = default_options
@@ -35,9 +48,10 @@ module SimpleAgentExtension
       AgentDirectoryLoader.new(options[:agent_directories]).load
       run_command(command, options)
       0
-    rescue OptionParser::ParseError, Error, ArgumentError, KeyError => error
-      @error.puts error.message
-      1
+    rescue CommandError => error
+      report_failure(error, usage: parser)
+    rescue OptionParser::ParseError, UsageError => error
+      report_failure(error)
     end
 
     # Aligns the name column alone. Columns an Agent does not declare are
@@ -54,6 +68,16 @@ module SimpleAgentExtension
     end
 
     private
+
+    # @param [Exception] error
+    # @param [OptionParser, nil] usage printed when the caller still needs the
+    #   command vocabulary
+    # @return [Integer] exit status the run reports as a failure
+    def report_failure(error, usage: nil)
+      @error.puts error.message
+      @error.puts usage if usage
+      1
+    end
 
     def default_options
       {
@@ -105,9 +129,9 @@ module SimpleAgentExtension
 
     def command(arguments)
       command = arguments.shift
-      raise ArgumentError, "missing command" unless command
-      raise ArgumentError, "unknown command: #{command}" unless COMMANDS.key?(command)
-      raise ArgumentError, "unexpected arguments: #{arguments.join(" ")}" unless arguments.empty?
+      raise CommandError, "missing command" unless command
+      raise CommandError, "unknown command: #{command}" unless COMMANDS.key?(command)
+      raise CommandError, "unexpected arguments: #{arguments.join(" ")}" unless arguments.empty?
 
       command
     end
@@ -115,7 +139,7 @@ module SimpleAgentExtension
     def validate_options(command, options)
       return unless options[:force] && command != "deploy"
 
-      raise ArgumentError, "--force is only valid for deploy"
+      raise UsageError, "--force is only valid for deploy"
     end
 
     def run_command(command, options)

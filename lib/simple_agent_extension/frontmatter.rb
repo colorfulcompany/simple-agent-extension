@@ -13,6 +13,8 @@ module SimpleAgentExtension
   module Frontmatter
     DELIMITER = "---".freeze
     PATTERN = /\A---\r?\n(.*?)^---[ \t]*\r?\n?/m
+    # Metadata starts after the opening delimiter line.
+    METADATA_START_LINE_OFFSET = 1
 
     class InvalidFrontmatter < Error; end
 

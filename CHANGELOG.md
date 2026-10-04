@@ -1,3 +1,9 @@
+## [0.2.2] 2026-10-04
+
+- fix: make the causes of errors easier to read
+- chore: add gem package task
+- docs: install from rubygems.org or run with rvx
+
 ## [0.2.1] 2026-10-02
 
 - feat: support Claude Code

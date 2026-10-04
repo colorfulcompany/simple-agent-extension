@@ -8,15 +8,23 @@ module SimpleAgentExtension
   # reader exposes adaptive, common static, and Agent-specific static fragment
   # collections without defining their field vocabulary.
   class MetadataLoader
+    class InvalidMetadata < Error; end
+
     FILENAME = "metadata.yaml".freeze
 
+    # Psych does not know which file it parsed, so the path is attached here.
+    # Its backtrace points into Psych itself, so it is dropped.
+    #
     # @param [String] dir
     # @return [MetadataLoader] empty when +metadata.yaml+ is absent, never nil
+    # @raise [InvalidMetadata] when +metadata.yaml+ has a YAML syntax error
     def self.load(dir)
       path = File.join(dir, FILENAME)
       return new(Metadata.new) unless File.exist?(path)
 
       new(Metadata.from(YAML.safe_load(File.read(path)) || {})) # rubocop:disable Style/YAMLFileRead
+    rescue Psych::SyntaxError => e
+      raise InvalidMetadata, "#{path}: #{[e.problem, e.context].compact.join(" ")} at line #{e.line} column #{e.column}", cause: nil
     end
 
     # @param [Metadata] metadata source YAML mapping

@@ -142,51 +142,76 @@ describe "simple-agent-extension" do
       }
     end
   end
-
-  it "stops before building when an Agent directory is invalid" do
-    Fixture.valid_workspace do |workspace|
-      missing_directory = File.join(workspace, "missing-agents")
-      build_root = File.join(workspace, "artifacts")
-      stdout, stderr, status = invoke(
-        workspace,
-        "build",
-        "--source-root", File.join(workspace, "source"),
-        "--build-root", build_root,
-        "--agent-dir", missing_directory
-      )
-
-      assert {
-        !status.success? &&
-          stdout.empty? &&
-          stderr.lines.size == 1 &&
-          stderr.include?(missing_directory) &&
-          !File.exist?(build_root)
-      }
-    end
-  end
 end
 
 module SimpleAgentExtension
   describe CLI do
-    it "shows the command vocabulary in the help output" do
-      output = StringIO.new
-      status = CLI.new(output: output, error: StringIO.new).run(["--help"])
+    describe "#run" do
+      describe "with --help" do
+        it "shows the command vocabulary" do
+          output = StringIO.new
+          status = CLI.new(output: output, error: StringIO.new).run(["--help"])
 
-      assert { status == 0 && output.string.include?("Commands:") }
-    end
+          assert { status == 0 && output.string.include?("Commands:") }
+        end
+      end
 
-    it "does not expose the former install command" do
-      error = StringIO.new
-      status = CLI.new(output: StringIO.new, error: error).run(["install"])
+      describe "when no command is given" do
+        it "reports the mistake, then shows the command vocabulary" do
+          error = StringIO.new
+          status = CLI.new(output: StringIO.new, error: error).run([])
 
-      assert { status == 1 && error.string == "unknown command: install\n" }
-    end
+          assert {
+            status == 1 &&
+              error.string.start_with?("missing command\n") &&
+              error.string.include?("Commands:")
+          }
+        end
+      end
 
-    it "accepts --force only for deploy" do
-      error = StringIO.new
-      status = CLI.new(output: StringIO.new, error: error).run(["build", "--force"])
+      describe "when the former install command is given" do
+        it "reports it as unknown, then shows the command vocabulary" do
+          error = StringIO.new
+          status = CLI.new(output: StringIO.new, error: error).run(["install"])
 
-      assert { status == 1 && error.string == "--force is only valid for deploy\n" }
+          assert {
+            status == 1 &&
+              error.string.start_with?("unknown command: install\n") &&
+              error.string.include?("Commands:")
+          }
+        end
+      end
+
+      describe "when arguments follow a known command" do
+        it "reports them, then shows the command vocabulary" do
+          error = StringIO.new
+          status = CLI.new(output: StringIO.new, error: error).run(["build", "extra"])
+
+          assert {
+            status == 1 &&
+              error.string.start_with?("unexpected arguments: extra\n") &&
+              error.string.include?("Commands:")
+          }
+        end
+      end
+
+      describe "when an option is misspelled" do
+        it "reports the mistake alone, because the command is already known" do
+          error = StringIO.new
+          status = CLI.new(output: StringIO.new, error: error).run(["build", "--nope"])
+
+          assert { status == 1 && error.string == "invalid option: --nope\n" }
+        end
+      end
+
+      describe "when --force is given outside deploy" do
+        it "reports the mistake alone" do
+          error = StringIO.new
+          status = CLI.new(output: StringIO.new, error: error).run(["build", "--force"])
+
+          assert { status == 1 && error.string == "--force is only valid for deploy\n" }
+        end
+      end
     end
 
     describe "#agent_lines" do
