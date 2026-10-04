@@ -168,25 +168,33 @@ end
 
 module SimpleAgentExtension
   describe CLI do
-    it "shows the command vocabulary in the help output" do
-      output = StringIO.new
-      status = CLI.new(output: output, error: StringIO.new).run(["--help"])
+    describe "#run" do
+      describe "with --help" do
+        it "shows the command vocabulary" do
+          output = StringIO.new
+          status = CLI.new(output: output, error: StringIO.new).run(["--help"])
 
-      assert { status == 0 && output.string.include?("Commands:") }
-    end
+          assert { status == 0 && output.string.include?("Commands:") }
+        end
+      end
 
-    it "does not expose the former install command" do
-      error = StringIO.new
-      status = CLI.new(output: StringIO.new, error: error).run(["install"])
+      describe "when the former install command is given" do
+        it "reports it as unknown" do
+          error = StringIO.new
+          status = CLI.new(output: StringIO.new, error: error).run(["install"])
 
-      assert { status == 1 && error.string == "unknown command: install\n" }
-    end
+          assert { status == 1 && error.string == "unknown command: install\n" }
+        end
+      end
 
-    it "accepts --force only for deploy" do
-      error = StringIO.new
-      status = CLI.new(output: StringIO.new, error: error).run(["build", "--force"])
+      describe "when --force is given outside deploy" do
+        it "reports the mistake" do
+          error = StringIO.new
+          status = CLI.new(output: StringIO.new, error: error).run(["build", "--force"])
 
-      assert { status == 1 && error.string == "--force is only valid for deploy\n" }
+          assert { status == 1 && error.string == "--force is only valid for deploy\n" }
+        end
+      end
     end
 
     describe "#agent_lines" do
