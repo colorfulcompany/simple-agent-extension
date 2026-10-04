@@ -97,6 +97,20 @@ module SimpleAgentExtension
           assert { extension.entrypoint_document.is_a? Extensions::EntrypointDocument }
         end
       end
+
+      describe "with a YAML syntax error in the frontmatter" do
+        it "raises InvalidEntrypointFrontmatter" do
+          extension = TestingBase::Skill.new(
+            package: "deep-review",
+            dir: "/source/deep-review/skill",
+            files: ["SKILL.md"]
+          )
+
+          File.stub(:read, "---\nname: [x\n---\nbody\n") do
+            assert_raises(Extensions::InvalidEntrypointFrontmatter) { extension.entrypoint_document }
+          end
+        end
+      end
     end
 
     describe "#name" do

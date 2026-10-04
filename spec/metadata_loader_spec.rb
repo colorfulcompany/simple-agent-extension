@@ -23,6 +23,16 @@ module SimpleAgentExtension
           assert { loader.metadata.empty? }
         end
       end
+
+      describe "with a YAML syntax error" do
+        it "raises InvalidMetadata" do
+          File.stub(:exist?, true) do
+            File.stub(:read, "name: [x\n") do
+              assert_raises(MetadataLoader::InvalidMetadata) { MetadataLoader.load("/source/deep-review/skill") }
+            end
+          end
+        end
+      end
     end
 
     describe "with sections" do

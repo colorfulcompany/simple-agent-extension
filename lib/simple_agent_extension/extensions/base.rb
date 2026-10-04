@@ -1,6 +1,7 @@
 module SimpleAgentExtension
   module Extensions
     class EntrypointDocumentNotFound < Error; end
+    class InvalidEntrypointFrontmatter < Error; end
 
     EntrypointDocument = Data.define(:metadata, :body)
 
@@ -54,6 +55,8 @@ module SimpleAgentExtension
         not_found = EntrypointDocumentNotFound.new("entrypoint of package `#{@package}' / type `#{type}', #{entrypoint_path} not found.")
         not_found.set_backtrace(e.backtrace)
         raise not_found, cause: nil
+      rescue Psych::SyntaxError => e
+        raise InvalidEntrypointFrontmatter, "#{entrypoint_path}: #{[e.problem, e.context].compact.join(" ")} at line #{e.line + Frontmatter::METADATA_START_LINE_OFFSET} column #{e.column}", cause: nil
       end
 
       # @return [MetadataLoader] source YAML reader
