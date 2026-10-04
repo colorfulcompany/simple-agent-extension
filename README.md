@@ -4,14 +4,14 @@
 
 ## Installation
 
-Requires Ruby 3.3 or later.
+Requires Ruby 3.3 or later (not needed beforehand when running with `rvx`, which provides Ruby itself).
 
-The gem is not published to RubyGems.org yet, so install it from GitHub with Bundler:
+Add the gem to your Gemfile:
 
 ```ruby
 # Gemfile
 group :development do
-  gem "simple-agent-extension", github: "colorfulcompany/simple-agent-extension"
+  gem "simple-agent-extension"
 end
 ```
 
@@ -25,15 +25,11 @@ Then run the CLI through Bundler:
 bundle exec simple-agent-extension packages
 ```
 
-Pin a release with `tag:` so the checkout does not move:
+Or run it without a Gemfile with [rv](https://github.com/spinel-coop/rv)'s `rvx`, which installs the gem on first use:
 
-```ruby
-gem "simple-agent-extension",
-  github: "colorfulcompany/simple-agent-extension",
-  tag: "v0.1.0"
+```sh
+rvx simple-agent-extension packages
 ```
-
-`branch:` and `ref:` are also available; note that `branch:` follows new commits rather than pinning.
 
 ## Usage
 
