@@ -42,6 +42,7 @@ module SimpleAgentExtension
       parser.parse!(arguments)
 
       return display_help(parser) if options[:help]
+      return display_version(parser) if options[:version]
 
       command = command(arguments)
       validate_options(command, options)
@@ -86,13 +87,16 @@ module SimpleAgentExtension
         agents: [],
         agent_directories: [],
         force: false,
-        help: false
+        help: false,
+        version: false
       }
     end
 
     def option_parser(options)
       OptionParser.new do |parser|
         parser.banner = banner
+        parser.program_name = "simple-agent-extension"
+        parser.version = VERSION
 
         parser.on("--source-root DIRECTORY", "Source package root (default: ./packages)") do |directory|
           options[:source_root] = File.expand_path(directory)
@@ -112,6 +116,9 @@ module SimpleAgentExtension
         parser.on("-h", "--help", "Show this help") do
           options[:help] = true
         end
+        parser.on("-V", "--version", "Show version") do
+          options[:version] = true
+        end
       end
     end
 
@@ -123,7 +130,12 @@ module SimpleAgentExtension
     end
 
     def display_help(parser)
-      @output.puts parser
+      @output.puts parser.ver, "", parser
+      0
+    end
+
+    def display_version(parser)
+      @output.puts parser.ver
       0
     end
 

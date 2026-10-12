@@ -156,6 +156,15 @@ module SimpleAgentExtension
         end
       end
 
+      describe "with --version" do
+        it "shows the program name and version" do
+          output = StringIO.new
+          status = CLI.new(output: output, error: StringIO.new).run(["--version"])
+
+          assert { status == 0 && output.string == "simple-agent-extension #{VERSION}\n" }
+        end
+      end
+
       describe "when no command is given" do
         it "reports the mistake, then shows the command vocabulary" do
           error = StringIO.new
