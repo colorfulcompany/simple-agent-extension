@@ -73,7 +73,41 @@ module SimpleAgentExtension
       end
     end
 
+    describe "#clean" do
+      before do
+        @workspace = Fixture.valid_workspace
+        @runner = runner(@workspace)
+        @runner.build
+      end
+
+      it "removes every Agent's artifacts when no target is selected" do
+        @runner.clean
+
+        assert { Dir.empty?(@workspace.build_root) }
+      end
+
+      it "keeps other Agents' artifacts when a target is selected" do
+        @runner.clean(agents: ["copilot"])
+
+        assert { Dir.children(@workspace.build_root).sort == AgentRegistry.default.all.map(&:name).sort - ["copilot"] }
+      end
+    end
+
     describe "#build" do
+      describe "when a source package was removed after the last build" do
+        before do
+          @workspace = Fixture.valid_workspace
+          @runner = runner(@workspace)
+          @runner.build
+          FileUtils.rm_rf(File.join(@workspace.source_root, "metadata-free"))
+        end
+
+        it "leaves no artifact of that package in the build tree" do
+          @runner.build
+
+          assert { Dir.glob("*/*/metadata-free", base: @workspace.build_root).empty? }
+        end
+      end
       describe "with the valid package fixture" do
         before do
           @workspace = Fixture.valid_workspace

@@ -137,10 +137,13 @@ snapshot as below:
 
 ```sh
 simple-agent-extension packages
+simple-agent-extension clean
 simple-agent-extension build
 simple-agent-extension deploy
 simple-agent-extension agents
 ```
+
+`build` (and therefore `deploy`) runs `clean` first, so an artifact whose source package was removed is not deployed again. `clean` removes `<build-root>/<agent>/` for each targeted Agent only. It does not remove anything already deployed.
 
 All commands resolve `--source-root` from `./packages` and `--build-root` from `./build` by default. Either root may be outside the repository.
 
