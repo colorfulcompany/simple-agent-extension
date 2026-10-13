@@ -13,6 +13,32 @@ module SimpleAgentExtension::Agents
           ) == {"permission" => {"read" => "allow", "edit" => "ask"}}
         }
       end
+
+      describe "skill disable-model-invocation" do
+        describe "when true" do
+          it "hides the skill from auto-selection and keeps the slash command" do
+            assert {
+              OpenCode::MetadataTranslator.new.translate(
+                type: :skill,
+                field: "disable-model-invocation",
+                value: true
+              ) == {"metadata" => {"opencode/autoinvoke" => "false", "opencode/slash" => "true"}}
+            }
+          end
+        end
+
+        describe "when false" do
+          it "omits the field" do
+            assert {
+              OpenCode::MetadataTranslator.new.translate(
+                type: :skill,
+                field: "disable-model-invocation",
+                value: false
+              ).nil?
+            }
+          end
+        end
+      end
     end
 
     describe "#artifact_core_file" do

@@ -10,6 +10,22 @@ module SimpleAgentExtension
           {"permission" => permissions}
         end
 
+        # For OpenCode before 2.0.23, which reads only these `metadata` keys.
+        # 2.0.23+ reads top-level `disable-model-invocation` itself and ignores
+        # `opencode/slash`, so this rule can go once older versions are unsupported.
+        define_translation type: :skill, field: "disable-model-invocation" do |disabled|
+          if disabled == true
+            {
+              "metadata" => {
+                "opencode/autoinvoke" => "false",
+                "opencode/slash" => "true"
+              }
+            }
+          else # standard:disable Style/EmptyElse
+            nil
+          end
+        end
+
         define_translation type: :agent, field: "name" do |_name|
           nil
         end

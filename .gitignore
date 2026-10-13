@@ -37,3 +37,6 @@ Gemfile.lock
 /.lean-spec/
 /specs/
 /.agents/skills/leanspec/
+
+# peas
+/.peas/

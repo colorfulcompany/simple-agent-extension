@@ -15,7 +15,8 @@ module SimpleAgentExtension
 
     COMMANDS = {
       "packages" => "List package names under the source root",
-      "build" => "Compile artifacts into the build root",
+      "clean" => "Remove artifacts from the build root",
+      "build" => "Clean, then compile artifacts into the build root",
       "deploy" => "Build artifacts, then deploy them to Agents",
       "agents" => "List Agent names that can be targeted"
     }.freeze
@@ -42,6 +43,7 @@ module SimpleAgentExtension
       parser.parse!(arguments)
 
       return display_help(parser) if options[:help]
+      return display_version(parser) if options[:version]
 
       command = command(arguments)
       validate_options(command, options)
@@ -86,13 +88,16 @@ module SimpleAgentExtension
         agents: [],
         agent_directories: [],
         force: false,
-        help: false
+        help: false,
+        version: false
       }
     end
 
     def option_parser(options)
       OptionParser.new do |parser|
         parser.banner = banner
+        parser.program_name = "simple-agent-extension"
+        parser.version = VERSION
 
         parser.on("--source-root DIRECTORY", "Source package root (default: ./packages)") do |directory|
           options[:source_root] = File.expand_path(directory)
@@ -100,7 +105,7 @@ module SimpleAgentExtension
         parser.on("--build-root DIRECTORY", "Build artifact root (default: ./build)") do |directory|
           options[:build_root] = File.expand_path(directory)
         end
-        parser.on("--agent NAME", "Build or deploy only NAME (repeatable)") do |name|
+        parser.on("--agent NAME", "Clean, build, or deploy only NAME (repeatable)") do |name|
           options[:agents] << name
         end
         parser.on("--agent-dir DIRECTORY", "Load direct *.rb Agent registrations from DIRECTORY") do |directory|
@@ -111,6 +116,9 @@ module SimpleAgentExtension
         end
         parser.on("-h", "--help", "Show this help") do
           options[:help] = true
+        end
+        parser.on("-V", "--version", "Show version") do
+          options[:version] = true
         end
       end
     end
@@ -123,7 +131,12 @@ module SimpleAgentExtension
     end
 
     def display_help(parser)
-      @output.puts parser
+      @output.puts parser.ver, "", parser
+      0
+    end
+
+    def display_version(parser)
+      @output.puts parser.ver
       0
     end
 
@@ -154,6 +167,8 @@ module SimpleAgentExtension
         @output.puts runner.packages
       when "agents"
         @output.puts agent_lines(runner.agents)
+      when "clean"
+        @output.puts runner.clean(agents: options[:agents])
       when "build"
         @output.puts runner.build(agents: options[:agents])
       when "deploy"

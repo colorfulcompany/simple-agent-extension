@@ -115,9 +115,16 @@ entrypoint frontmatter
   < static.agents.<agent>
 ```
 
-#### Adaptation across Agents
+#### Supported adaptive fields
 
-One `adaptive` fragment becomes different artifact metadata per Agent. The `permissions` fragment above compiles to:
+| Field | Applies to | Value | Meaning |
+|---|---|---|---|
+| `permissions` | agent, skill | map of tool name to `allow`, `ask`, or `deny` | Which tools the extension may use, and how. |
+| `disable-model-invocation` | skill | boolean | `true` keeps the skill out of model auto-selection; `/name` still works. |
+
+Each Agent decides how a field appears in its artifact; see the `MetadataTranslator` in `lib/simple_agent_extension/agents/`. A field an Agent has no rule for, listed here or not, passes through unchanged, so it takes effect only on an Agent that recognizes it.
+
+The `permissions` fragment above (`read: allow`, `edit: ask`) compiles to:
 
 | Agent | Artifact metadata |
 |---|---|
@@ -126,6 +133,8 @@ One `adaptive` fragment becomes different artifact metadata per Agent. The `perm
 | `opencode` | `permission: {read: allow, edit: ask}` |
 
 `claude` maps known lowercase tool names such as `read` and `webfetch` to Claude Code's names (`Read`, `WebFetch`) and passes any other name through unchanged. `deny` becomes `disallowedTools` on an agent and `disallowed-tools` on a skill. An agent's `tools` lists both `allow` and `ask` tools, because Claude Code's `tools` limits which tools exist rather than pre-approving them.
+
+`disable-model-invocation` is not part of the Agent Skills specification, but Claude Code, Copilot, and OpenCode v2 ( 2.0.23+ ) read it as written. Older OpenCode versions read only their own `metadata` keys, so `opencode` translates the field for them.
 
 A skill whose metadata is left unchanged by adaptation and carries no Agent-specific static fragments is written once to the shared skill directory. Otherwise it is written into that Agent's own configuration tree ( written with Ruby ). An agent extension is always Agent-specific. `claude` does not read the shared skill directory, so its skills are always written to `~/.claude/skills`.
 
@@ -137,10 +146,13 @@ snapshot as below:
 
 ```sh
 simple-agent-extension packages
+simple-agent-extension clean
 simple-agent-extension build
 simple-agent-extension deploy
 simple-agent-extension agents
 ```
+
+`build` (and therefore `deploy`) runs `clean` first, so an artifact whose source package was removed is not deployed again. `clean` removes `<build-root>/<agent>/` for each targeted Agent only. It does not remove anything already deployed.
 
 All commands resolve `--source-root` from `./packages` and `--build-root` from `./build` by default. Either root may be outside the repository.
 

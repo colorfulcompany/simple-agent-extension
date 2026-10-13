@@ -1,3 +1,9 @@
+## [0.2.3] 2026-10-12
+
+- feat: add version option
+- feat: add clean subcommand
+- feat: support `disable-model-invocation' field for very heavy skills
+
 ## [0.2.2] 2026-10-04
 
 - fix: make the causes of errors easier to read

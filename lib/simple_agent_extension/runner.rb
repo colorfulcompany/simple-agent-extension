@@ -1,3 +1,5 @@
+require "fileutils"
+
 module SimpleAgentExtension
   # Coordinates source collection, compilation, and deployment for one
   # source and build roots. Entry points configure these boundaries explicitly.
@@ -25,12 +27,29 @@ module SimpleAgentExtension
       end
     end
 
+    # Removes each selected Agent's whole artifact subtree, so artifacts whose
+    # source package is gone cannot survive into the next deploy. Other
+    # Agents' subtrees are left alone.
+    #
+    # @param [Array<String>] agents target names; all targets when empty
+    # @return [Array<String>] Agent directories that existed and were removed
+    def clean(agents: [])
+      selected_agents(agents)
+        .map { |agent| File.join(@build_root, agent.name) }
+        .select { |dir| File.exist?(dir) }
+        .each { |dir| FileUtils.rm_rf(dir) }
+    end
+
+    # Cleans the selected Agents first, so the build tree mirrors the current
+    # source tree instead of accumulating every artifact ever compiled.
+    #
     # @param [Array<String>] agents target names; all targets when empty
     # @return [Array<String>] directories written to the build tree
     def build(agents: [])
       targets = selected_agents(agents)
       extensions = source_extensions
       warn_unknown_deploy_to_names(extensions)
+      clean(agents: agents)
 
       targets.flat_map { |agent|
         compiler = Compiler.new(agent: agent, build_root: @build_root)
