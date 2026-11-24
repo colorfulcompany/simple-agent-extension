@@ -10,6 +10,9 @@ Gemfile.lock
 # Compiled packages
 /build/
 
+# Local source packages
+/packages/
+
 # Scratch space (geminabox data, local gem artifacts)
 /tmp/
 

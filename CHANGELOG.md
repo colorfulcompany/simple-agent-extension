@@ -1,3 +1,7 @@
+## [0.2.4] 2026-11-16
+
+- chore: remove the bundled `deep-review` source package
+
 ## [0.2.3] 2026-10-12
 
 - feat: add version option
